@@ -1,7 +1,6 @@
-name: Build iStore - use mnt
+name: Build iStore - rk35xx
 
 on:
-  repository_dispatch:
   workflow_dispatch:
     inputs:
       ssh:
@@ -10,7 +9,7 @@ on:
         default: 'false'
 
 env:
-  REPO_URL: https://github.com/istoreos/istoreos
+  REPO_URL: https://github.com/xiangtailiang/istoreos
   # REPO_BRANCH: main
   FEEDS_CONF: feeds.conf
   CONFIG_FILE: .config
@@ -34,8 +33,6 @@ jobs:
         ARCHITECTURE:
           # - rk33xx
           - rk35xx
-          # - x86
-          # - rtd129x
         os:
           - ubuntu-22.04
 
