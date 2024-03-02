@@ -1,18 +1,14 @@
 name: Build iStore OS
 
 on:
-  repository_dispatch:
   workflow_dispatch:
     inputs:
       ssh:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
-  # schedule:
-  #  - cron: 0 16 * * *
-
 env:
-  REPO_URL: https://github.com/istoreos/istoreos
+  REPO_URL: https://github.com/xiangtailiang/istoreos
   # REPO_BRANCH: main
   FEEDS_CONF: feeds.conf
   CONFIG_FILE: .config
@@ -34,10 +30,7 @@ jobs:
           - istoreos-22.03
           # - istoreos-23.05
         ARCHITECTURE:
-          # - rk33xx
           - rk35xx
-          # - x86
-          # - rtd129x
         os:
           - ubuntu-22.04
 
@@ -191,11 +184,13 @@ jobs:
 
         ⏱️ 编译时间: $(date +"%Y年%m月%d日%H时%M分")
 
-        🌐 管理地址: 10.0.0.1
+        🌐 管理地址: 192.168.100.1
 
         👤 用户名: root
 
-        🔒 密码: password " >> release.txt
+        🔒 密码: password
+
+        📒 说明: 单网口设备默认网口为LAN，旁路由模式，需要插入主路由后进后台查找对应IP地址访问，反之双网口设备默认网口为WAN+LAN，主路由模式。 " >> release.txt
         echo "::set-output name=status::success"
 
     - name: 自动发布固件到 Releases
@@ -205,13 +200,6 @@ jobs:
         tag_name: ${{ steps.tag.outputs.release_tag }}
         body_path: release.txt
         files: ${{ env.FIRMWARE }}/*
-
-    - name: 删除运行记录
-      uses: GitRML/delete-workflow-runs@main
-      with:
-        retain_days: 1
-        keep_minimum_runs: 1
-        token: ${{ env.GITHUB_TOKEN }}
 
     - name: 删除自动发布的旧固件
       uses: dev-drprasad/delete-older-releases@v0.1.0
