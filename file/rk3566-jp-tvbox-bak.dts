@@ -11,14 +11,13 @@
 #include "rk3566.dtsi"
 
 / {
-	model = "Panther X2";
-	compatible = "panther,x2", "rockchip,rk3566";
+	model = "JianPian TV Box";
+	compatible = "jp,tvbox", "rockchip,rk3566";
 
 	aliases {
 		ethernet0 = &gmac1;
-		mmc0 = &sdhci;
-		mmc1 = &sdmmc0;
-		mmc2 = &sdmmc1;
+		mmc0 = &sdmmc1;
+		mmc1 = &sdhci;
 	};
 
 	chosen: chosen {
@@ -38,49 +37,19 @@
 		status = "okay";
 	};
 
-    gpio-leds {
-        compatible = "gpio-leds";
-        led_pwr: led-pwr {
-            label = "led-pwr";
-            default-state = "on";
-            gpios = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
-            pinctrl-names = "default";
-            pinctrl-0 = <&led_pwr_enable_h>;
-            retain-state-suspended;
-            status = "okay";
-        };
-        
-        led_wifi: led-wifi {
-            label = "led-wifi";
-            default-state = "off";
-            gpios = <&gpio0 RK_PD6 GPIO_ACTIVE_HIGH>;
-            pinctrl-names = "default";
-            pinctrl-0 = <&led_wifi_enable_h>;
-            retain-state-suspended;
-            status = "okay";
-        };
-        
-        led_eth: led-eth {
-            label = "led-eth";
-            default-state = "off";
-            gpios = <&gpio0 RK_PD5 GPIO_ACTIVE_HIGH>;
-            pinctrl-names = "default";
-            pinctrl-0 = <&led_eth_enable_h>;
-            retain-state-suspended;
-            status = "okay";
-        };
-        
-        led_status: led-status {
-            label = "led-status";
-            default-state = "on";
-            gpios = <&gpio0 RK_PD3 GPIO_ACTIVE_HIGH>;
-            linux,default-trigger = "heartbeat";
-            pinctrl-names = "default";
-            pinctrl-0 = <&led_status_enable_h>;
-            retain-state-suspended;
-            status = "okay";
-        };
-    };
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led-diy {
+			label = "diy-led";
+			default-state = "on";
+			gpios = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+			pinctrl-names = "default";
+			pinctrl-0 = <&diy_led_enable_h>;
+			retain-state-suspended;
+		};
+	};
 
 #ifdef DTS_NO_LEGACY
 	hdmi-con {
@@ -193,6 +162,21 @@
 		regulator-max-microvolt = <5000000>;
 		vin-supply = <&vcc5v0_usb>;
 	};
+
+	hdmi_sound: hdmi-sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,mclk-fs = <128>;
+		simple-audio-card,name = "rockchip,hdmi";
+		status = "disabled";
+
+		simple-audio-card,cpu {
+				sound-dai = <&i2s0_8ch>;
+		};
+		simple-audio-card,codec {
+				sound-dai = <&hdmi>;
+		};
+	};
 };
 
 &cpu0 {
@@ -217,7 +201,39 @@
 };
 
 &hdmi {
+	assigned-clocks = <&cru CLK_HDMI_CEC>;
+	assigned-clock-rates = <32768>;
+	avdd-0v9-supply = <&vdda_0v9>;
+	avdd-1v8-supply = <&vcca_1v8>;
+	status = "okay";
+};
+
+#ifdef DTS_NO_LEGACY
+&hdmi_in {
+	hdmi_in_vp0: endpoint {
+		remote-endpoint = <&vp0_out_hdmi>;
+	};
+};
+
+&hdmi_out {
+	hdmi_out_con: endpoint {
+		remote-endpoint = <&hdmi_con_in>;
+	};
+};
+#else
+&hdmi_in_vp0 {
+	status = "okay";
+};
+
+&hdmi_in_vp1 {
 	status = "disabled";
+};
+#endif
+
+
+
+&hdmi_sound {
+	status = "okay";
 };
 
 &i2c0 {
@@ -388,7 +404,7 @@
 				regulator-max-microvolt = <3300000>;
 
 				regulator-state-mem {
-					regulator-on-in-suspend;
+					regulator-off-in-suspend;
 				};
 			};
 
@@ -456,7 +472,7 @@
 				regulator-always-on;
 				regulator-name = "vcc3v3_sd";
 				regulator-state-mem {
-					regulator-on-in-suspend;
+					regulator-off-in-suspend;
 				};
 			};
 		};
@@ -529,23 +545,11 @@
 			rockchip,pins = <0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
-    leds {
-        led_pwr_enable_h: led-pwr-enable-h {
-            rockchip,pins = <0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
-        };
-        
-        led_wifi_enable_h: led-wifi-enable-h {
-            rockchip,pins = <0 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
-        };
-        
-        led_eth_enable_h: led-eth-enable-h {
-            rockchip,pins = <0 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
-        };
-
-        led_status_enable_h: led-status-enable-h {
-            rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
-        };
-    };
+	leds {
+		diy_led_enable_h: diy-led-enable-h {
+			rockchip,pins = <0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
 	pmic {
 		pmic_int: pmic_int {
 			rockchip,pins =	<0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
@@ -578,11 +582,10 @@
 	pmuio1-supply = <&vcc3v3_pmu>;
 	pmuio2-supply = <&vcc3v3_pmu>;
 	vccio1-supply = <&vccio_acodec>;
-	vccio2-supply = <&vcc_1v8>;
 	vccio3-supply = <&vccio_sd>;
 	vccio4-supply = <&vcc_1v8>;
 	vccio5-supply = <&vcc_3v3>;
-	vccio6-supply = <&vcc_3v3>;
+	vccio6-supply = <&vcc_1v8>;
 	vccio7-supply = <&vcc_3v3>;
 	status = "okay";
 };
@@ -598,21 +601,8 @@
 	status = "okay";
 };
 
-&sdmmc0 {
-	bus-width = <4>;
-	max-frequency = <150000000>;
-	cap-mmc-highspeed;
-	cap-sd-highspeed;
-	supports-sd;
-	disable-wp;
-	pinctrl-names = "default";
-	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
-	vmmc-supply = <&vcc3v3_sd>;
-	vqmmc-supply = <&vccio_sd>;
-	status = "okay";
-};
-
 &sdmmc1 {
+	/* WiFi & BT combo module AMPAK AP6398S */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	bus-width = <4>;
@@ -620,14 +610,16 @@
 	cap-sd-highspeed;
 	cap-sdio-irq;
 	disable-wp;
-	supports-sdio;
 	non-removable;
-	sd-uhs-sdr104;
+	supports-sdio;
+	sd-uhs-sdr50;
 	keep-power-in-suspend;
 	mmc-pwrseq = <&sdio_pwrseq>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk>;
 	status = "okay";
+	vmmc-supply = <&vcc3v3_sys>;
+	vqmmc-supply = <&vcca1v8_pmu>;
 
 	brcmf: wifi@1 {
 		compatible = "brcm,bcm4329-fmac";
@@ -641,7 +633,7 @@
 };
 
 &sata2 {
-	status = "disabled";
+	status = "okay";
 };
 
 &saradc {
@@ -700,6 +692,15 @@
 &vop_mmu {
 	status = "okay";
 };
+
+#ifdef DTS_NO_LEGACY
+&vp0 {
+	vp0_out_hdmi: endpoint@ROCKCHIP_VOP2_EP_HDMI0 {
+		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
+		remote-endpoint = <&hdmi_in_vp0>;
+	};
+};
+#endif
 
 &vepu {
 	status = "okay";
@@ -792,7 +793,6 @@
 
 &usbdrd_dwc3 {
 	dr_mode = "host";
-	extcon = <&usb2phy0>;
 	status = "okay";
 };
 
